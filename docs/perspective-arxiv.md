@@ -134,7 +134,7 @@ Bits-per-byte measures how efficiently a model compresses held-out text. Lower v
 
 Ternary weight quantization discretizes each weight to one of three values, reducing model size by approximately 10× relative to float16 while eliminating multiply-accumulate operations at inference time [16, 17]. The quantization introduces an accuracy cost proportional to the precision lost. We conjecture that this cost is smaller when the training distribution is more regular: a model encoding a lower-entropy corpus requires less numerical precision to represent the same amount of structure. Put differently, if the weights of an English-trained model are more "loaded" — carrying more bits of information per parameter — then truncating them to ternary loses more.
 
-This conjecture has no direct prior literature. The closest evidence is indirect: Galke et al. [6] found that more compositionally regular languages produce more consistent representations across independently trained agents, which is consistent with the idea that regular training produces more "compressible" weights. The quantization-tolerance question requires a direct experiment.
+This conjecture has no direct prior literature. The closest evidence is indirect: Galke et al. [6] found that more compositionally regular languages produce more consistent representations across independently trained agents, which is consistent with the idea that regular training produces more "compressible" weights. The quantization-tolerance question requires a direct experiment. A sharper prediction follows from the isoFLOP perspective: cell D (Loga-ternary) should close the gap to cell A (English-float16) more effectively than cell C (English-ternary) does — that is, the val\_bpb penalty of ternary quantization should be smaller as a fraction of the float16 baseline when the training distribution is more regular.
 
 ### 7.3 Experimental Design
 
@@ -163,7 +163,7 @@ In English, the same head would handle partially overlapping responsibilities: i
 
 Under ternary quantization, near-zero weights round to exactly zero. The prediction is therefore:
 
-1. **Higher head-level zero variance in Loga models.** Some heads become nearly fully zero (the pattern they specialized on is handled elsewhere or is redundant); others remain dense. English-trained models show more uniform zero distributions across heads.
+1. **Higher head-level zero variance in Loga models, with a bimodal distribution.** Because Loga's grammar is context-free and locally decodable from byte classes, the number of distinct syntactic circuits required is bounded by the finite state machine implicit in the EBNF. This predicts two clusters: highly sparse heads whose narrow syntactic pattern is learned early and becomes near-zero as it is absorbed elsewhere, and a smaller cluster of dense heads handling lexical composition and long-range structure. English-trained models should show a more unimodal, lower-variance distribution, as residual ambiguity prevents any head from fully retiring.
 
 2. **Greater pruning headroom in Loga ternary models.** Structured pruning — removing entire heads whose weight matrices are predominantly zero — degrades val\_bpb less for Loga ternary (cell D) than for English ternary (cell C) at the same pruning rate.
 
@@ -172,11 +172,11 @@ Under ternary quantization, near-zero weights round to exactly zero. The predict
 **Measurement protocol.** Conjecture 3 is evaluated as a post-training analysis on the models from cells C and D (ternary runs), without additional training:
 
 - Compute the fraction of zero weights per attention head for every head in every layer of both models.
-- Measure the variance of this distribution across heads. Higher variance indicates more structured sparsity (Loga prediction) vs. near-uniform distribution (English prediction).
+- Measure the variance of this distribution across heads. Higher variance indicates more structured sparsity (Loga prediction) vs. near-uniform distribution (English prediction). Secondary metrics: kurtosis of the zero-fraction distribution and the Wasserstein distance between the Loga and English zero-fraction histograms; a bimodal Loga distribution will show high kurtosis and large Wasserstein distance from the English unimodal baseline.
 - Apply magnitude-based head pruning at thresholds 10%, 20%, 30%, 40% of heads removed. Record val\_bpb after each pruning step for both models.
 - Compare the pruning degradation curves: a shallower curve for cell D than cell C supports Conjecture 3.
 
-**Learning curve measurement.** All four cells log val\_bpb at regular training step intervals, not only at convergence. Plotting val\_bpb against training steps (compute) directly tests sample efficiency: if the Loga cells (B and D) reach a given val\_bpb threshold in fewer steps than their English counterparts (A and C), this supports the interpretation that a more regular training substrate reduces the data required to learn equivalent structure — the core prediction underlying all three conjectures.
+**Learning curve measurement.** All four cells log val\_bpb at regular training step intervals, not only at convergence. Plotting val\_bpb against training steps (compute) directly tests sample efficiency: if the Loga cells (B and D) reach a given val\_bpb threshold in fewer steps than their English counterparts (A and C), this supports the interpretation that a more regular training substrate reduces the data required to learn equivalent structure — the core prediction underlying all three conjectures. We further predict that the advantage will be visible early: Loga's character-class partitioning gives the model an approximately oracular prior on syntactic category from the first byte of each token, which should accelerate the emergence of coherent attention patterns within the first epoch on Wikipedia-scale data.
 
 ---
 
