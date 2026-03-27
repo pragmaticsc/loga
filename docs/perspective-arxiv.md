@@ -103,6 +103,17 @@ We describe a candidate constructed language, Loga, designed around the measurab
 
 **Compositionality.** Novel concepts are formed by compounding two roots with a joiner character `{`, preserving compositional transparency: `ku{Ma` (water-make) = irrigate; `ge{se` (fire-place) = volcano; `pa{ka` (idea-person) = philosopher. This follows Galke et al.'s finding [6] that compositional transparency supports generalization, as opposed to logographic expansion which requires each new concept to be memorized.
 
+**Worked example.** The English sentence "The cat sat on the mat." encodes as:
+
+| Loga | Gloss | Bytes | BPE tokens (est.) |
+|------|-------|-------|-------------------|
+| `ka!` | person/cat + nominative | 3 | 1 |
+| `ma%` | mat + locative | 3 | 1 |
+| `Si;` | sit-verb + past | 3 | 1 |
+| `.` | sentence boundary | 1 | 1 |
+
+Total: 10 bytes, ~4 tokens. English "The cat sat on the mat." is ~26 bytes and tokenises to 9–10 BPE tokens (GPT-4 tokenizer). At BPE vocab=8,192 trained on Loga text, every inflected 3–4 byte word form appears thousands of times and merges to a single token, approaching the ideal of one token per semantic+grammatical unit.
+
 ---
 
 ## 7. Two Conjectures and a Factorial Experiment
@@ -136,9 +147,9 @@ The two conjectures are tested jointly in a 2×2 factorial experiment:
 
 All four cells use identical model architecture (nanochat-scale, 10–50M parameters), identical compute budget (automated hyperparameter search via autoresearch-mlx [18] on Apple M4 Max), and BPE tokenizers of identical vocabulary size (8,192) trained on their respective corpora.
 
-The training corpus for both English and Loga conditions is Simple English Wikipedia (~160MB, ~250K articles). The Loga corpus is produced by LLM-assisted translation (claude-sonnet-4-6 with the full grammar specification as system context), with back-translation validation against a sentence embedding threshold to filter low-fidelity articles.
+The training corpus for both English and Loga conditions is Simple English Wikipedia (~160MB, ~250K articles). The Loga corpus is produced by LLM-assisted translation (claude-sonnet-4-6 with the full grammar specification as system context), with back-translation validation against a sentence embedding threshold to filter low-fidelity articles. All four cells train until a matched BPE token budget (identical number of tokens seen per cell); results report both byte-normalized bpb (bits per input byte, the primary metric) and token-normalized bpb (bits per output token), allowing tokenizer efficiency to be separated from model learning efficiency.
 
-Ternary training follows the BitNet b1.58 protocol [16]: standard linear layers are replaced with BitLinear layers (absmean quantization to {−1, 0, +1}, straight-through estimator for gradients), with floating-point activations. Fully ternary activations are not used; quantizing activations in LLMs causes severe accuracy loss [19] and is orthogonal to the hypotheses under test.
+Ternary training follows the BitNet b1.58 protocol [16]: standard linear layers are replaced with BitLinear layers (absmean quantization to {−1, 0, +1}, straight-through estimator for gradients), with floating-point activations. We use an MLX-native `BitLinear` implementation (included in the repository at `train/bitlinear.py`) rather than the official CPU `bitnet` reference library; MLX's Metal kernels enable efficient quantization-aware training on Apple Silicon without requiring CUDA. Fully ternary activations are not used; quantizing activations in LLMs causes severe accuracy loss [19] and is orthogonal to the hypotheses under test.
 
 ### 7.4 Conjecture 3: Regular Training Induces Structured Sparsity
 
