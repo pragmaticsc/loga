@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "loga"
+version = "0.1.0"
+description = "LLM efficiency experiment: English vs. constructed language training"
+requires-python = ">=3.11"
+dependencies = [
+    # Translation pipeline
+    "anthropic>=0.40.0",
+    # Tokenizer training
+    "tokenizers>=0.20.0",
+    # Data handling
+    "datasets>=2.20.0",
+    "tqdm>=4.66.0",
+    # Evaluation / analysis
+    "numpy>=1.26.0",
+    "matplotlib>=3.9.0",
+    "sentence-transformers>=3.0.0",
+    "scikit-learn>=1.5.0",
+    # Utilities
+    "rich>=13.7.0",
+    "click>=8.1.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+train = [
+    # MLX — Apple Silicon native (M1/M2/M3/M4). Install via:
+    #   pip install mlx mlx-lm
+    # autoresearch MLX fork: https://github.com/trevin-creator/autoresearch-mlx
+    "mlx>=0.16.0",
+    "mlx-lm>=0.15.0",
+    "numpy>=1.26.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.4.0",
+]
+
+[project.scripts]
+translate = "translator.translate:cli"
+train-tokenizer = "tokenizer.tokenizer_train:cli"
+benchmark = "eval.benchmark:cli"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
