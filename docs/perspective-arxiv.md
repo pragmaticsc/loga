@@ -44,9 +44,11 @@ Recent work has established that this matters, though the evidence is nuanced. M
 
 This identifies the deeper question: what properties of a language maximize the conditional predictability of its token stream without sacrificing expressive completeness? This is a design question that natural language cannot answer, because natural language was not designed. A purpose-built language can.
 
-### 3.1 The Information-Theoretic Optimal Character Set
+### 3.1 Character Set as a Design Implementation Detail
 
-A concrete illustration: the choice of writing system for a purpose-built language is itself an engineering decision. Shannon entropy per byte — $H(X) / \text{bytes}(X)$ — measures how much semantic work each byte carries. Under UTF-8 encoding:
+The choice of writing system for a purpose-built language is an engineering decision, though it is worth clarifying what it does and does not determine. After tokenization, a model operates on integer token IDs — the specific glyphs are invisible to the network weights. The character set matters not for its visual properties but for how it shapes the BPE merge process: character range partitioning that coincides with morpheme boundaries gives the tokenizer strong statistical signal to merge complete morphemes into single tokens, rather than cutting arbitrarily through them.
+
+A concrete illustration: Shannon entropy per byte — $H(X) / \text{bytes}(X)$ — measures how much semantic work each byte carries. Under UTF-8 encoding:
 
 | Alphabet | Chars | Bytes/char | Bits/byte |
 |----------|-------|-----------|-----------|
@@ -55,9 +57,9 @@ A concrete illustration: the choice of writing system for a purpose-built langua
 | Latin Extended (ü, é, …) | 256 | 2 | 4.00 |
 | CJK ideographs | ~20,000 | 3 | 4.76 |
 
-The counterintuitive result: CJK characters — despite encoding thousands of concepts visually — are *less* byte-efficient than two-character ASCII roots because the 3-byte UTF-8 encoding cost cancels the representational gain. The information-theoretic optimum within the 1-byte encoding range is the full 95-character printable ASCII set, achieving 6.57 bits per byte — a 40% improvement over lowercase-only alphabets at no encoding cost.
+The counterintuitive result: CJK characters — despite encoding thousands of concepts visually — are *less* byte-efficient than two-character ASCII roots because the 3-byte UTF-8 encoding cost cancels the representational gain. The information-theoretic optimum within the 1-byte encoding range is the full 95-character printable ASCII set, achieving 6.57 bits per byte — a 40% improvement over lowercase-only alphabets at no encoding cost. This informs the root size in Loga: a 2-character root drawn from this alphabet encodes $95^2 = 9{,}025$ distinct concepts in 2 bytes, a 3.6× increase over phonotactically restricted systems, ensuring roots are frequent enough for reliable BPE merging.
 
-A 2-character root drawn from this 95-character alphabet encodes $95^2 = 9{,}025$ distinct concepts in 2 bytes. This is 3.6× more expressive than the 2,500 roots achievable under a restricted consonant-vowel phonotactic system, at half the byte cost.
+The character partitioning is primarily a design convenience that enables the BPE tokenizer to reliably identify morpheme boundaries. The actual efficiency gains we conjecture derive from compositional regularity and conditional entropy reduction — not from the choice of glyphs. A Loga rewritten in a different character set but preserving the same morphological structure should produce similar results.
 
 ---
 
@@ -163,6 +165,8 @@ Under ternary quantization, near-zero weights round to exactly zero. The predict
 - Apply magnitude-based head pruning at thresholds 10%, 20%, 30%, 40% of heads removed. Record val\_bpb after each pruning step for both models.
 - Compare the pruning degradation curves: a shallower curve for cell D than cell C supports Conjecture 3.
 
+**Learning curve measurement.** All four cells log val\_bpb at regular training step intervals, not only at convergence. Plotting val\_bpb against training steps (compute) directly tests sample efficiency: if the Loga cells (B and D) reach a given val\_bpb threshold in fewer steps than their English counterparts (A and C), this supports the interpretation that a more regular training substrate reduces the data required to learn equivalent structure — the core prediction underlying all three conjectures.
+
 ---
 
 ## 8. Implications and Limitations
@@ -170,6 +174,10 @@ Under ternary quantization, near-zero weights round to exactly zero. The predict
 If Conjecture 1 is supported, it implies that the choice of training language is an unexploited lever on model efficiency. Pre-training corpora could be designed or curated for tokenization alignment, not just scale and quality. If Conjecture 2 is supported, it implies a design principle for quantized models: train on simpler, more regular data to make the quantization penalty cheaper. If Conjecture 3 is supported, the implications compound: the three techniques — conlang training, ternary quantization, and structured pruning — form a compression cascade in which each step makes the next cheaper, potentially enabling capable models at parameter counts previously considered inadequate. All three results would motivate further work at larger scales and with richer evaluation.
 
 **Limitations.** The primary limitation is translation fidelity. The Loga training corpus is an LLM-generated translation; systematic translation errors would mean the model learns noise rather than structure. Back-translation validation at 1% of articles provides a partial check but cannot eliminate this risk. A secondary limitation is corpus byte parity: the Loga corpus will differ in byte count from English for the same semantic content. Controlling for this requires training to equivalent token budgets rather than byte counts. Both limitations are methodological challenges with straightforward mitigations, not objections in principle.
+
+A third limitation is sequence length. Loga's explicit morphology — encoding "went" as root + tense suffix rather than a single token — may expand token sequences for equivalent semantic content. Longer sequences raise attention cost (O(n²)) and, within autoresearch-mlx's fixed 5-minute budget, reduce the number of optimizer steps per run. Two factors mitigate this. First, the primary metric val_bpb normalises by bytes of *input*, not number of tokens, so a longer sequence that compresses better still registers a lower val_bpb; the metric directly captures whether the added length is earning its keep. Second, BPE trained on Loga text will merge frequent 4-byte inflected word forms into single tokens, recovering much of the sequence length that morphological explicitness adds. The experiment will report tokens-per-article alongside val_bpb to make the sequence length effect directly observable.
+
+A fourth limitation is confounded design. Loga bundles three innovations: (a) compositional morphology, (b) reduced lexical ambiguity and polysemy, and (c) BPE-aligned character partitioning. A difference in val_bpb between cells A and B will not isolate which factor drives it. A natural extension for future work is a "Normalised English" control condition — English text with irregular verbs lemmatised, contractions expanded, and synonym variation reduced — which would share property (b) with Loga without (a) or (c). Including such a condition in a follow-on experiment would disentangle the contribution of morphological structure from the simpler effect of surface regularisation.
 
 A further consideration is scale. BitNet b1.58's strongest results are at ≥1B parameters; the gap between ternary and float16 narrows as scale increases [16]. At 10–50M parameters, Conjecture 2's interaction effect may be difficult to observe against the baseline quantization penalty. We consider this an acceptable limitation for a first experiment: the within-ternary comparison (cell D versus cell C) is well-defined regardless of whether either ternary model matches its float16 counterpart in absolute terms.
 
@@ -185,7 +193,7 @@ A converging body of evidence — from compositional learning theory [6], tokeni
 
 The three conjectures form a logical chain. If the training language is a design variable (Conjecture 1), then simpler languages may lower the information-theoretic floor on what a model needs to represent. If the representational burden is lower (Conjecture 2), less numerical precision is needed to represent it, making quantization cheaper. If the representational structure is more organized (Conjecture 3), the sparsity that quantization induces will be more structured, making further compression cheaper still. Each step in this chain is individually testable and individually useful; the chain as a whole, if supported, describes a new approach to efficient language model training from first principles.
 
-We offer this paper as a statement of the conjectures and a map of the territory. We expect to be wrong about some things. We invite the community to tell us which ones, and to run the experiment if we do not.
+We offer this paper as a statement of the conjectures and a map of the territory. We expect to be wrong about some things. We invite the community to tell us which ones, and to run the experiment if we do not. This paper does not report experimental results; it states the conjectures precisely, grounds them in existing empirical literature, and describes the experiment required to test them. If Conjecture 1 holds, the more consequential follow-on question is whether reduced training data requirements extend to logical reasoning specifically — whether a Loga pre-trained model, fine-tuned on a translated reasoning benchmark, reaches higher accuracy than an identically-sized English-trained counterpart with equivalent fine-tuning data. That question is left for subsequent work.
 
 ---
 
@@ -217,9 +225,9 @@ The authors thank the developers of autoresearch-mlx, the MLX framework (Apple),
 
 [10] Johnson, M. et al. (2017). Google's Multilingual Neural Machine Translation System: Enabling Zero-Shot Translation. *TACL* 5, 339–351. arXiv:1611.04558.
 
-[11] Sen, S. et al. (2018). A Neural Interlingua for Multilingual Machine Translation. *WMT 2018*. arXiv:1804.08198.
+[11] Lu, Y. et al. (2018). A Neural Interlingua for Multilingual Machine Translation. *WMT 2018*. arXiv:1804.08198.
 
-[12] Lingua, B. et al. (2020). Language-Aware Interlingua for Multilingual Neural Machine Translation. *ACL 2020*. https://aclanthology.org/2020.acl-main.150/
+[12] Zhu, C. et al. (2020). Language-Aware Interlingua for Multilingual Neural Machine Translation. *ACL 2020*. https://aclanthology.org/2020.acl-main.150/
 
 [13] Hao, S. et al. (2024). Training Large Language Models to Reason in a Continuous Latent Space. *ICLR 2025*. arXiv:2412.06769.
 
