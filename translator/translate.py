@@ -49,71 +49,125 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 GRAMMAR_PREAMBLE = """\
-You are a translator from English to Loga, a constructed language designed for
-LLM tokenization efficiency. Follow these rules exactly:
+You are a translator from English to Loga v0.2, a constructed language designed for
+LLM tokenization efficiency. Follow these rules exactly.
 
-PHONEME INVENTORY
-- Consonants: p t k b d g s n m l  (10 total)
-- Vowels: a e i o u  (5 total)
-- All syllables are CV (consonant-vowel). No consonant clusters.
+WORD STRUCTURE (always exactly 3 characters, space-delimited):
+  Nouns:  [C₁][C₂][CASE]   — 2-char root + 1 case suffix
+  Verbs:  [C₁][C₂][TENSE]  — 2-char root + 1 tense marker
 
-MORPHOLOGY
-- Noun roots are CVCV (4 chars). Append case suffix directly:
-    -a  = subject (nominative)
-    -e  = direct object (accusative)
-    -i  = genitive (of / possessive)
-    -o  = dative (to / for)
-    -un = locative (at / on / in)
-    -ul = lative (toward / to)
-    -uk = ablative (from)
-- Verb roots are CVCV. Append tense suffix:
-    -pa = past,  -ta = present,  -ka = future
-  Optionally add aspect: -s (perfective), -l (imperfective)
-- Adjectives: root + -no (follow the noun they modify)
-- Negation: prefix su- on verb or noun root
-- Questions: prefix sentence with particle "ki"
+GRAMMATICAL CLASS (determined by first character C₁):
+  Lowercase a-z → NOUN root
+  Uppercase A-Z → VERB root
+  Digit 0-9     → NUMBER literal (no suffix needed)
 
-SYNTAX (strict SOV)
-  [SUBJ-case] [OBJ-case] [ADJ-no] [VERB-tense]
+CASE SUFFIXES (third character of nouns — from the !-/ range):
+  !  nominative   — subject of verb
+  "  accusative   — direct object
+  #  genitive     — possessor / of-relation
+  $  dative       — indirect object / recipient
+  %  locative     — location (at / on / in)
+  &  lative       — direction (toward / to)
+  '  ablative     — source (from)
+  (  instrumental — means / tool
+  )  comitative   — accompaniment (with)
+  *  causative    — cause / because of
+  +  benefactive  — for the benefit of
+  ,  comparative  — more than
+  -  adjectival   — modifies preceding noun (adjective)
+  .  adverbial    — modifies verb
+  /  vocative     — direct address
 
-CORE VOCABULARY (partial)
-  mia=I/me, tua=you, sia=he/she/it
-  sita=sit, dela=be, pabo=know, telu=say, nago=move, mako=make
-  pena=see, dako=give, libo=take, muto=eat, somi=sleep, naki=think
-  kuda=water, gelo=fire, tupa=time, sela=world/place, molu=person
-  belu=beautiful, bipu=big, temo=small, ganu=good, beko=bad
-  lipe=life, tobu=city, nola=many (plural marker)
-  Numbers: zopa=0, poka=1, toka=2, soka=3, noka=4, loka=5,
-           moka=6, goka=7, boka=8, doka=9
+TENSE / ASPECT MARKERS (third character of verbs — from the :-@ range):
+  :  present
+  ;  past
+  <  future
+  =  perfective (completed action)
+  >  imperfective (ongoing / habitual)
+  ?  interrogative (question)
+  @  conditional
 
-PROPER NOUNS: transliterate phonemically into CVCV patterns (capitalize first letter).
-  Example: "England" → "Egalande", "Paris" → "Palise"
+SYNTAX: strict SOV (Subject-Object-Verb). No exceptions. No movement.
+  [SUBJ!] [OBJ"] [VERB:]   (declarative, end with ".")
+  [SUBJ!] [OBJ"] [VERB?]   (question, no period)
 
-COMPOUNDS: concatenate two roots for new concepts.
-  Example: water-make = kuda-mako = irrigate; fire-place = gelo-sela = volcano
+PARTICLES (single characters; precede the word they modify):
+  [  all, every
+  \  some, a few
+  ]  one (indefinite)
+  ^  none, zero
+  _  negation (directly before verb or noun)
+  `  subordinate clause introducer ("that")
 
-NUMBERS: compose root words. "23" → "toka-soka", "100" → "poka-zopa-zopa"
+COMPOUNDS (join two roots with {):
+  ku{Ma  = water+make = irrigate
+  ge{se  = fire+place = volcano
+  pa{ka  = idea+person = philosopher
+
+CORE VOCABULARY:
+
+Pronouns (noun roots):
+  mi=I/me  tu=you(sg)  si=he/she/it  ma=we  na=you(pl)  sa=they
+
+Core nouns (all lowercase first char):
+  ka=person/human  ku=water    ge=fire     to=time     se=place/world
+  li=life          bo=city     pa=idea     da=thing    ne=name/word
+  la=land/ground   ha=leader   re=rule/law go=road     no=knowledge
+  fa=group/family  wa=conflict pe=food     de=death    gi=start
+  ta=end           nu=number   su=part     yu=purpose  ro=work
+  lo=location      ve=event    fi=feeling  wi=will     bi=size/big
+  mo=amount/many   zo=zero     ra=animal   pi=plant    co=country
+
+Core verbs (all uppercase first char):
+  Be=be(copula)  Go=go/move  Se=see      Sa=say/speak  Ma=make/create
+  Gi=give        Ta=take     Ea=eat      Sl=sleep       Th=think
+  Kn=know        Wa=walk     Si=sit      Ha=have        Us=use
+  Li=live        Di=die      Ca=call     Co=come        Le=leave
+  Fi=find        St=start    En=end      Ch=change      Ru=rule
+  Fo=follow      Wo=work     Fe=feel     Wi=want        Re=return
+  Bu=build       Br=bring    Se=see      Sp=speak       Tr=travel
+
+Numbers: use digit literals directly. Compound: 42, 100, 1945.
+
+Proper nouns: abbreviate to 2 printable ASCII chars, capitalize first.
+  "England" → En!   "Paris" → Pa!   "Albert Einstein" → Ab! Es!
+  "United States" → US!   "World War" → Ww!
+
+SAMPLE SENTENCES:
+  ka! da" Se:.     = The person sees the thing.
+  mi! bo& Go;.     = I went toward the city.
+  ku! li" Be:.     = Water is life.
+  mi! ` ka! da" Se; " Kn:.  = I know that the person saw the thing.
+  \ ka! bo& Go<.   = Some people will go to the city.
+  mi! da" _Se:.    = I do not see the thing.
 
 TRANSLATION RULES:
-1. Translate the MEANING, not word-for-word. Choose the Loga root that best matches.
-2. If no root exists for a concept, create a compound or use phonemic transliteration.
+1. Translate MEANING, not word-for-word. Choose the closest Loga root.
+2. For new concepts: use a compound (root{root) or abbreviate to 2 chars.
 3. Keep sentences short. Split long English sentences into multiple Loga sentences.
 4. Preserve paragraph structure (blank lines between paragraphs).
-5. Do NOT include English text in your output. Output ONLY Loga.
-6. Do NOT add explanation or commentary. Output ONLY the translated text.
+5. Output ONLY Loga text. NO English. NO explanation. NO commentary.
+6. Every noun must have exactly one case suffix. Every verb must have exactly one tense marker.
+7. Sentence-final period "." ends each sentence and is followed by a space.
 """
 
 BACK_TRANSLATE_PREAMBLE = """\
-You are a translator from Loga (a constructed language) back to English.
-Loga rules:
-- SOV word order; noun cases: -a(subj), -e(obj), -i(gen), -o(dat), -un(loc), -ul(lative), -uk(ablative)
-- Verb tenses: -pa(past), -ta(pres), -ka(fut); aspect: -s(done), -l(ongoing)
-- Adjectives: root-no; negation: su- prefix; question: ki prefix
-- Core vocab: mia=I, tua=you, sia=he/she/it, sita=sit, dela=be, pabo=know,
-  telu=say, nago=move, pena=see, kuda=water, molu=person, belu=beautiful,
-  bipu=big, temo=small, ganu=good, beko=bad, lipe=life, tobu=city
+You are a translator from Loga v0.2 (a constructed language) back to English.
 
-Translate the following Loga text to natural English. Output ONLY English.
+Loga v0.2 rules:
+- Words are 3 characters: 2-char root + 1-char suffix
+- Lowercase first char = noun; uppercase first char = verb
+- Noun case suffixes: !=subject, "=object, #=of/possessive, $=to(dative),
+  %=at/in(locative), &=toward(lative), '=from(ablative), -=adjective, .=adverb
+- Verb tense markers: :=present, ;=past, <=future, ==done, >=ongoing, ?=question, @=conditional
+- Particles: [=all, \=some, ]=one, ^=none, _=negation, `=that(subordinate)
+- Compounds joined with {: ku{Ma=irrigate, ge{se=volcano, pa{ka=philosopher
+- Strict SOV word order; sentences end with "."
+- Core vocab: mi=I, tu=you, si=he/she/it, ma=we, sa=they, ka=person, ku=water,
+  ge=fire, to=time, se=place, li=life, bo=city, pa=idea, da=thing, la=land,
+  Be=be, Go=go, Se=see, Sa=say, Ma=make, Kn=know, Th=think, Ha=have
+
+Translate the Loga text to natural English. Output ONLY English.
 """
 
 

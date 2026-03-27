@@ -337,12 +337,12 @@ This grammar is **context-free**. Every syntactic role is recoverable from local
 
 ## 8. Sample Sentences (v0.2)
 
-### 8.1 "The cat sat on the mat."
+### 8.1 "The person sat in the city."
 
 ```
-ka!  ma%  Si;.
-ka!  ma%  Si;
-cat-SUBJ  mat-LOC  sit-PAST
+ka!  bo%  Si;.
+ka!  bo%  Si;
+person-SUBJ  city-LOC  sit-PAST
 ```
 
 ### 8.2 "Water is life."
