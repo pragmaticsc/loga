@@ -88,8 +88,9 @@ TENSE / ASPECT MARKERS (third character of verbs — from the :-@ range):
   @  conditional
 
 SYNTAX: strict SOV (Subject-Object-Verb). No exceptions. No movement.
-  [SUBJ!] [OBJ"] [VERB:]   (declarative, end with ".")
-  [SUBJ!] [OBJ"] [VERB?]   (question, no period)
+  [SUBJ!] [OBJ"] [VERB:] .   (declarative: standalone "." after verb, space-delimited)
+  [SUBJ!] [OBJ"] [VERB?]     (yes/no question: no period; "?" is verb tense marker)
+  [wi!]   [OBJ"] [VERB:] .   (wh-question: use "wi" pronoun + normal tense + ".")
 
 PARTICLES (single characters; precede the word they modify):
   [  all, every
@@ -158,7 +159,9 @@ Loga v0.2 rules:
 - Words are 3 characters: 2-char root + 1-char suffix
 - Lowercase first char = noun; uppercase first char = verb
 - Noun case suffixes: !=subject, "=object, #=of/possessive, $=to(dative),
-  %=at/in(locative), &=toward(lative), '=from(ablative), -=adjective, .=adverb
+  %=at/in(locative), &=toward(lative), '=from(ablative), (=instrumental(by/with),
+  )=comitative(together with), *=causative(because of), +=benefactive(for),
+  ,=comparative(more than), -=adjective, .=adverb, /=vocative(direct address)
 - Verb tense markers: :=present, ;=past, <=future, ==done, >=ongoing, ?=question, @=conditional
 - Particles: [=all, \=some, ]=one, ^=none, _=negation, `=that(subordinate)
 - Compounds joined with {: ku{Ma=irrigate, ge{se=volcano, pa{ka=philosopher

@@ -33,7 +33,7 @@ Alphabet               Chars   Bytes/char   Bits/byte   2-char roots
 ---------------------  ------  -----------  ----------  ------------
 Lowercase ASCII (v0.1)     20          1.0        4.32           400
 Lowercase + upper ASCII    52          1.0        5.70         2,704
-Full printable ASCII       95          1.0        6.57         9,025  ← optimum
+Full printable ASCII       95          1.0        6.57         9,025  ← optimum (theoretical; Loga uses 3,224 under semantic partitioning)
 Latin Extended (ü, é…)    256          2.0        4.00            —
 2-byte Unicode block     1920          2.0        5.45            —
 CJK ideographs          20000          3.0        4.76            —
@@ -255,8 +255,8 @@ SUBJ! VERB:
 The copula verb root is `Be`. Identity, classification, property ascription:
 
 ```
-mi! da" Be:     = I am a thing.
-ka! bo% Be;     = The person was in the city.
+mi! da" Be: .     = I am a thing.
+ka! bo% Be; .     = The person was in the city.
 ```
 
 ### 6.4 Adjectives
@@ -264,9 +264,9 @@ ka! bo% Be;     = The person was in the city.
 Adjective roots take the adjectival case suffix `-` and immediately follow the noun they modify:
 
 ```
-ka! bi- da" Se:
+ka! bi- da" Se: .
 = The big person sees the thing.
-  (person-SUBJ big-ADJ thing-OBJ see-PRES)
+  (person-SUBJ big-ADJ thing-OBJ see-PRES .)
 ```
 
 ### 6.5 Embedded Clauses
@@ -274,9 +274,9 @@ ka! bi- da" Se:
 Subordinate clauses introduced by `` ` `` (backtick), terminated by space before the main verb:
 
 ```
-mi! ` ka! da" Se; " Kn:
+mi! ` ka! da" Se; " Kn: .
 = I know that the person saw the thing.
-  I-SUBJ COMP person-SUBJ thing-OBJ see-PAST OBJ know-PRES
+  I-SUBJ COMP person-SUBJ thing-OBJ see-PAST OBJ know-PRES .
 ```
 
 ### 6.6 Questions
@@ -290,8 +290,8 @@ mi! da" Se?     = Do I see / Did I see / Will I see the thing?
 **Wh-questions**: use the interrogative pronoun `wi` (what/who/which) with the appropriate case suffix. The verb retains its normal tense marker — tense is not lost.
 
 ```
-wi! da" Se:     = Who sees the thing?       (wi = nominative, verb present)
-mi! wi% Go:     = Where am I going?         (wi = locative, verb present)
+wi! da" Se: .     = Who sees the thing?       (wi = nominative, verb present; wh-questions end with " .")
+mi! wi% Go: .     = Where am I going?         (wi = locative, verb present)
 ```
 
 ### 6.7 Negation
@@ -299,8 +299,8 @@ mi! wi% Go:     = Where am I going?         (wi = locative, verb present)
 Precede the target word with the negation particle `_`:
 
 ```
-mi! da" _Se:    = I do not see the thing.
-_mi! da" Se:    = Not I (but someone else) sees the thing.
+mi! da" _Se: .    = I do not see the thing.        (_Se: = negation prefix directly attached to verb)
+_mi! da" Se: .    = Not I (but someone else) sees the thing.
 ```
 
 ---
@@ -313,30 +313,32 @@ declarative      ::= noun_arg+ decl_verb_phrase SPACE "."
 question         ::= noun_arg+ quest_verb_phrase
 
 noun_arg         ::= (quantifier SPACE)? (noun | proper_noun | clause_arg)
-                     (SPACE adjective)* (SPACE SPACE)?
-noun             ::= noun_root case_suffix
+                     (SPACE adjective)*
+noun             ::= (noun_root | compound_noun) case_suffix
 noun_root        ::= [a-z] [a-zA-Z0-9]
+compound_noun    ::= noun_root "{" root
 proper_noun      ::= proper_noun_root case_suffix
 proper_noun_root ::= [A-Z] [a-zA-Z0-9]
 case_suffix      ::= "!" | '"' | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/"
 
 clause_arg       ::= "`" noun_arg+ decl_verb_phrase SPACE case_suffix
                    (* subordinate clause used as a syntactic argument;
-                      case_suffix is standalone, marking the clause's role *)
+                      the standalone case_suffix marks the clause's role —
+                      the one structural exception to the 3-byte word rule *)
 
 adjective        ::= (noun_root | verb_root) "-"
 adverb           ::= (noun_root | verb_root) "."
 
-decl_verb_phrase  ::= ("_" SPACE)? verb decl_tense
-quest_verb_phrase ::= ("_" SPACE)? verb "?"
-verb              ::= verb_root
+decl_verb_phrase  ::= "_"? verb decl_tense
+quest_verb_phrase ::= "_"? verb "?"
+verb              ::= (verb_root | compound_verb)
+compound_verb    ::= verb_root "{" root
 verb_root         ::= [A-Z] [a-zA-Z0-9]
 decl_tense        ::= ":" | ";" | "<" | "=" | ">" | "@"
 tense_marker      ::= decl_tense | "?"
 
 quantifier       ::= "[" | "\" | "]" | "^"
 
-compound         ::= root "{" root
 root             ::= noun_root | verb_root
 
 SPACE            ::= " "
@@ -344,9 +346,10 @@ SPACE            ::= " "
 
 Notes:
 - `proper_noun_root` and `verb_root` share the pattern `[A-Z][a-zA-Z0-9]`; suffix type distinguishes them — case suffixes (`!`–`/`) mark proper nouns, tense markers (`:`–`@`) mark verbs.
-- `clause_arg` is the one structural exception to the 3-byte word rule: the case suffix following a subordinate clause is a standalone token marking the clause's syntactic role.
-- Yes/no questions use `?` as the verb's tense marker (losing explicit tense, which must be inferred from context); wh-questions use the interrogative pronoun `wi` with a normal tense marker.
-- Negation particle `_` is space-delimited before its target word.
+- Compound class is determined by the first root's first character: `pa{ka!` is a noun compound (lowercase `p`); `Ku{ma:` is a verb compound (uppercase `K`).
+- `clause_arg` introduces one structural exception to the 3-byte word rule: the standalone case suffix after the embedded clause marks the clause's syntactic role.
+- Yes/no questions use `?` as the verb's tense marker (losing explicit tense, inferred from context); wh-questions use the interrogative pronoun `wi` with a normal tense marker and end with ` .` like declaratives.
+- Negation particle `_` is directly prefixed to its target word (no intervening space): `_Se:` = "not-see-present".
 
 This grammar is **context-free**. Every syntactic role is recoverable from local character-class information without lookahead or world knowledge.
 
@@ -375,11 +378,11 @@ mi!  ` ka!  bo%  Si; "  Kn: .
 I-SUBJ  COMP  person-SUBJ  city-LOC  sit-PAST  OBJ  know-PRES  .
 ```
 
-### 8.4 "The philosopher will not see the beautiful world."
+### 8.4 "The philosopher will not see the big world."
 
 ```
 pa{ka!  se"  bi-  _Se< .
-philosopher-SUBJ  world-OBJ  beautiful-ADJ  NEG-see-FUT  .
+philosopher-SUBJ  world-OBJ  big-ADJ  NEG-see-FUT  .
 ```
 
 ### 8.5 "Some people will go toward the city."
@@ -438,7 +441,7 @@ English achieves roughly 40–55% (Shannon, 1951; estimated from natural languag
 
 - **Encoding**: UTF-8 (all characters are single-byte ASCII)
 - **Word delimiter**: space (U+0020)
-- **Sentence delimiter**: standalone `.` token after the verb (declarative sentences only). Interrogative sentences have no sentence-final delimiter — they are identified by the `?` tense marker on the final verb.
+- **Sentence delimiter**: standalone `.` token after the verb for declaratives and wh-questions. Yes/no interrogative sentences (verb tense marker `?`) have no separate sentence-final `.` — they are identified solely by the `?` tense marker.
 - **Paragraph delimiter**: `\n\n` (blank line)
 - **File extension**: `.loga`
 - **Tokenizer vocab size**: 8,192 (matches autoresearch-mlx default)

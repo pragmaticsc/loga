@@ -138,7 +138,7 @@ This conjecture has no direct prior literature, and we acknowledge that the mech
 
 ### 7.3 Experimental Design
 
-The two conjectures are tested jointly in a 2×2 factorial experiment:
+Conjectures 1 and 2 are tested jointly in a 2×2 factorial experiment. Conjecture 3 is evaluated as a post-training sparsity analysis on the ternary models from cells C and D (see Section 7.4).
 
 |  | English corpus | Loga corpus |
 |--|---|---|
