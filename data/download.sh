@@ -42,13 +42,19 @@ dump_file = os.path.join(output_dir, "simplewiki-latest.xml.bz2")
 out_jsonl = os.path.join(output_dir, "simplewiki-articles.jsonl")
 out_sentences = os.path.join(output_dir, "simplewiki-sentences.txt")
 
-NS = "http://www.mediawiki.org/xml/ns/export/0.10"
+NS = "http://www.mediawiki.org/xml/export-0.11/"
 
 def clean_wikitext(text: str) -> str:
     """Remove wiki markup to get plain text."""
-    # Remove templates {{...}}
-    while "{{" in text:
-        text = re.sub(r'\{\{[^{}]*\}\}', '', text)
+    # Remove templates {{...}} iteratively; cap passes to avoid hang on malformed markup
+    for _ in range(30):
+        new_text = re.sub(r'\{\{[^{}]*\}\}', '', text)
+        if new_text == text:
+            break
+        text = new_text
+    # Remove any remaining unresolved {{ }} with a greedy sweep
+    text = re.sub(r'\{\{[^}]*\}\}', '', text)
+    text = re.sub(r'\{\{.*?\}\}', '', text, flags=re.DOTALL)
     # Remove tables {|...|}
     text = re.sub(r'\{\|.*?\|\}', '', text, flags=re.DOTALL)
     # Remove file/image links
