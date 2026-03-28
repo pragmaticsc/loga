@@ -31,7 +31,7 @@ UTF-8 encodes codepoints above U+007F as 2 or more bytes, regardless of how visu
 ```
 Alphabet               Chars   Bytes/char   Bits/byte   2-char roots
 ---------------------  ------  -----------  ----------  ------------
-Lowercase ASCII (v0.1)     20          1.0        4.32           400
+CVCV alphabet (v0.1)       20          1.0        4.32           400
 Lowercase + upper ASCII    52          1.0        5.70         2,704
 Full printable ASCII       95          1.0        6.57         9,025  ← optimum (theoretical; Loga uses 3,224 under semantic partitioning)
 Latin Extended (ü, é…)    256          2.0        4.00            —
@@ -308,12 +308,19 @@ _mi! da" Se: .    = Not I (but someone else) sees the thing.
 ## 7. EBNF Grammar
 
 ```ebnf
-sentence         ::= declarative | question
-declarative      ::= noun_arg+ decl_verb_phrase SPACE "."
-question         ::= noun_arg+ quest_verb_phrase
+sentence         ::= declarative | yn_question
 
-noun_arg         ::= (quantifier SPACE)? (noun | proper_noun | clause_arg)
+declarative      ::= arg_list SPACE decl_verb_phrase SPACE "."
+yn_question      ::= arg_list SPACE quest_verb_phrase
+                   (* yes/no question; wh-questions parse as declarative
+                      using the wi interrogative pronoun *)
+
+arg_list         ::= noun_arg (SPACE noun_arg)*
+
+noun_arg         ::= (quantifier SPACE)? "_"? (noun | proper_noun | clause_arg)
                      (SPACE adjective)*
+                   (* "_" on a noun_arg negates the noun phrase *)
+
 noun             ::= (noun_root | compound_noun) case_suffix
 noun_root        ::= [a-z] [a-zA-Z0-9]
 compound_noun    ::= noun_root "{" root
@@ -321,35 +328,33 @@ proper_noun      ::= proper_noun_root case_suffix
 proper_noun_root ::= [A-Z] [a-zA-Z0-9]
 case_suffix      ::= "!" | '"' | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/"
 
-clause_arg       ::= "`" noun_arg+ decl_verb_phrase SPACE case_suffix
+clause_arg       ::= "`" SPACE arg_list SPACE decl_verb_phrase SPACE case_suffix
                    (* subordinate clause used as a syntactic argument;
-                      the standalone case_suffix marks the clause's role —
-                      the one structural exception to the 3-byte word rule *)
+                      the standalone case_suffix is the one structural
+                      exception to the 3-byte word rule *)
 
 adjective        ::= (noun_root | verb_root) "-"
 adverb           ::= (noun_root | verb_root) "."
 
-decl_verb_phrase  ::= "_"? verb decl_tense
+decl_verb_phrase  ::= (adverb SPACE)* "_"? verb decl_tense
 quest_verb_phrase ::= "_"? verb "?"
-verb              ::= (verb_root | compound_verb)
-compound_verb    ::= verb_root "{" root
+verb              ::= verb_root | compound_verb
+compound_verb     ::= verb_root "{" root
 verb_root         ::= [A-Z] [a-zA-Z0-9]
 decl_tense        ::= ":" | ";" | "<" | "=" | ">" | "@"
-tense_marker      ::= decl_tense | "?"
 
-quantifier       ::= "[" | "\" | "]" | "^"
-
-root             ::= noun_root | verb_root
-
-SPACE            ::= " "
+quantifier        ::= "[" | "\" | "]" | "^"
+root              ::= noun_root | verb_root
+SPACE             ::= " "
 ```
 
 Notes:
 - `proper_noun_root` and `verb_root` share the pattern `[A-Z][a-zA-Z0-9]`; suffix type distinguishes them — case suffixes (`!`–`/`) mark proper nouns, tense markers (`:`–`@`) mark verbs.
 - Compound class is determined by the first root's first character: `pa{ka!` is a noun compound (lowercase `p`); `Ku{ma:` is a verb compound (uppercase `K`).
-- `clause_arg` introduces one structural exception to the 3-byte word rule: the standalone case suffix after the embedded clause marks the clause's syntactic role.
-- Yes/no questions use `?` as the verb's tense marker (losing explicit tense, inferred from context); wh-questions use the interrogative pronoun `wi` with a normal tense marker and end with ` .` like declaratives.
-- Negation particle `_` is directly prefixed to its target word (no intervening space): `_Se:` = "not-see-present".
+- `clause_arg` introduces one structural exception to the 3-byte word rule: the standalone case suffix after the embedded verb marks the clause's syntactic role.
+- Yes/no questions: `?` replaces the tense marker on the verb; tense must be inferred from context.
+- Wh-questions: use interrogative pronoun `wi` with normal tense marker; parse under `declarative`.
+- Negation particle `_` directly prefixes its target (no space): `_Se:` (negated verb), `_mi!` (negated noun).
 
 This grammar is **context-free**. Every syntactic role is recoverable from local character-class information without lookahead or world knowledge.
 

@@ -165,7 +165,7 @@ Loga v0.2 rules:
 - Verb tense markers: :=present, ;=past, <=future, ==done, >=ongoing, ?=question, @=conditional
 - Particles: [=all, \=some, ]=one, ^=none, _=negation, `=that(subordinate)
 - Compounds joined with {: ku{Ma=irrigate, ge{se=volcano, pa{ka=philosopher
-- Strict SOV word order; sentences end with "."
+- Strict SOV word order; declarative and wh-question sentences end with standalone "."; yes/no questions (verb tense "?") have no period
 - Core vocab: mi=I, tu=you, si=he/she/it, ma=we, sa=they, ka=person, ku=water,
   ge=fire, to=time, se=place, li=life, bo=city, pa=idea, da=thing, la=land,
   Be=be, Go=go, Se=see, Sa=say, Ma=make, Kn=know, Th=think, Ha=have

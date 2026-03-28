@@ -111,8 +111,9 @@ We describe a candidate constructed language, Loga, designed around the measurab
 | `da"` | thing + accusative | 3 | 1 |
 | `Se:` | see-verb + present | 3 | 1 |
 | `.` | sentence boundary | 1 | 1 |
+| ` ` × 3 | word delimiters | 3 | (merged with adjacent tokens) |
 
-Total: 10 bytes, ~4 tokens. English "The person sees the thing." is ~28 bytes and tokenises to 7–8 BPE tokens (GPT-4 tokenizer). At BPE vocab=8,192 trained on Loga text, every inflected 3-byte word form appears thousands of times and merges to a single token, approaching the ideal of one token per semantic+grammatical unit.
+Total: 13 bytes, ~4 tokens. English "The person sees the thing." is 26 bytes and tokenises to 7–8 BPE tokens (GPT-4 tokenizer). At BPE vocab=8,192 trained on Loga text, every inflected 3-byte word form appears thousands of times and merges to a single token, approaching the ideal of one token per semantic+grammatical unit.
 
 ---
 
