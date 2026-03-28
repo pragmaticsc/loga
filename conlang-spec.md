@@ -73,20 +73,22 @@ Second chars: any of a–z, A–Z, 0–9       62   Root second character (52 co
 {–~           {|}~     123–126         4   Compound / derivation markers
 ```
 
-**Word-level structure** (always 4 bytes, space-delimited):
+**Word-level structure** (always 3 bytes, space-delimited):
 
 ```
-[C₁ C₂] [S] [T]
- ──────   ─   ─
- root    case tense
+[C₁ C₂][suffix]
+ ──────  ──────
+ root    case (nouns) OR tense (verbs)
 
-C₁: first root char  → encodes noun vs. verb class
+C₁: first root char  → encodes noun vs. verb class (lowercase = noun, uppercase = verb)
 C₂: second root char → selects specific root within class
-S : case suffix      → syntactic role (§4.1)
-T : tense marker     → temporal / aspect (§4.2)
+suffix: one character — case marker for nouns (§4.1), tense marker for verbs (§4.2)
 ```
 
-Example: `ma!:` = noun-root `ma`, subject case `!`, present tense `:`
+No word carries both a case suffix and a tense marker simultaneously.
+Examples: `ka!` = noun-root `ka`, nominative case `!`; `Se:` = verb-root `Se`, present tense `:`
+
+**Disambiguation: `.` as adverbial suffix vs. sentence terminator.** The adverbial case suffix `.` (§4.1) always appears as the third byte of a space-delimited 3-byte word. The sentence-final `.` always follows a complete verb word whose suffix is a tense marker from the `:`–`@` range. These are unambiguous by local structure: verbs cannot take case suffixes, so a `.` after a tense-marked verb is always sentence-final.
 
 ---
 
@@ -366,7 +368,7 @@ pa{ka!  se"  bi-  _Se<.
 philosopher-SUBJ  world-OBJ  beautiful-ADJ  NEG-see-FUT
 ```
 
-### 8.5 "Many people moved quickly toward the city."
+### 8.5 "Some people will go toward the city."
 
 ```
 \ ka!  bo&  Go<.
@@ -392,13 +394,18 @@ With BPE vocab=8192 trained on Loga text:
 
 With ~300 noun roots × 15 cases = 4,500 inflected noun forms, each appearing thousands of times in the training corpus, BPE at vocab=8192 will learn nearly all of them as single tokens. The token stream then approaches the ideal of **one token per semantic+grammatical unit**.
 
-For comparison, English "unfortunately" tokenizes as 4 tokens across 13 bytes (3.25 bytes/token). A Loga inflected word is 3–4 bytes/token by construction.
+A Loga inflected word is 3 bytes/token by construction.
 
-Predicted efficiency gain: **15–25% reduction in tokens** for equivalent semantic content, compared to English BPE at the same vocabulary size.
+Predicted efficiency gain: a measurable reduction in tokens for equivalent semantic content, compared to English BPE at the same vocabulary size. The specific magnitude is an empirical question.
 
 ### 9.3 Theoretical Ceiling
 
-The information-theoretic floor for a corpus with this structure: each inflected word carries approximately log₂(9025 roots × 15 cases × 7 tenses) ≈ 19.8 bits of lexical + grammatical information in 3–4 bytes (24–32 bits). Information utilization: **62–82%**. English achieves roughly 40–55% (Shannon, 1951; estimated from natural language BPB measurements).
+The information-theoretic floor for a corpus with this structure: each word is 3 bytes (24 bits). Since nouns take case suffixes and verbs take tense markers (never both simultaneously), the information per word is:
+
+- **Nouns**: log₂(1,612 roots × 15 cases) ≈ log₂(24,180) ≈ 14.6 bits in 24 bits → **~61% utilization**
+- **Verbs**: log₂(1,612 roots × 7 tenses) ≈ log₂(11,284) ≈ 13.5 bits in 24 bits → **~56% utilization**
+
+English achieves roughly 40–55% (Shannon, 1951; estimated from natural language BPB measurements).
 
 ---
 
