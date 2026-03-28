@@ -57,7 +57,7 @@ A concrete illustration: Shannon entropy per byte — $H(X) / \text{bytes}(X)$ �
 | Latin Extended (ü, é, …) | 256 | 2 | 4.00 |
 | CJK ideographs | ~20,000 | 3 | 4.76 |
 
-The counterintuitive result: CJK characters — despite encoding thousands of concepts visually — are *less* byte-efficient than two-character ASCII roots because the 3-byte UTF-8 encoding cost cancels the representational gain. The information-theoretic optimum within the 1-byte encoding range is the full 95-character printable ASCII set, achieving 6.57 bits per byte — a 40% improvement over lowercase-only alphabets at no encoding cost. This informs the root size in Loga: a 2-character root drawn from this alphabet encodes $95^2 = 9{,}025$ distinct concepts in 2 bytes, a 3.6× increase over phonotactically restricted systems, ensuring roots are frequent enough for reliable BPE merging.
+The counterintuitive result: CJK characters — despite encoding thousands of concepts visually — are *less* byte-efficient than two-character ASCII roots because the 3-byte UTF-8 encoding cost cancels the representational gain. The information-theoretic optimum within the 1-byte encoding range is the full 95-character printable ASCII set, achieving 6.57 bits per byte — a 40% improvement over lowercase-only alphabets at no encoding cost. This informs the root size in Loga: a 2-character root drawn from this partitioned alphabet yields $26 \times 62 = 1{,}612$ noun roots and $1{,}612$ verb roots ($3{,}224$ usable in total) in 2 bytes — more than previous phonotactically restricted systems at half the byte cost per root — ensuring roots are frequent enough for reliable BPE merging.
 
 The character partitioning plays two complementary roles. First, it is an engineering convenience: assigning all noun roots to one ASCII range and all verb roots to another gives the BPE tokenizer strong statistical signal to keep morpheme boundaries intact during merging. Second, the 95-character set maximises information density per byte within the UTF-8 single-byte constraint. These are, however, secondary contributions. The primary efficiency gains we conjecture derive from compositional regularity and conditional entropy reduction — properties of the morphological structure, not of the specific glyphs. A Loga rewritten in a different character set but preserving the same SOV grammar, agglutinative morphology, and invariant roots would likely yield similar training efficiency results. The character set aids implementation and BPE alignment; it is not itself the hypothesis.
 
@@ -97,7 +97,7 @@ We describe a candidate constructed language, Loga, designed around the measurab
 
 **Root structure.** All roots are exactly two characters. The noun root inventory is $26 \times 62 = 1{,}612$ possible forms (the second character draws from 26 lowercase + 26 uppercase + 10 digits = 62 options); the verb root inventory is identical. A core vocabulary of approximately 300 noun roots and 200 verb roots is used, ensuring every root appears thousands of times in a Wikipedia-scale corpus — a prerequisite for reliable BPE merging.
 
-**Morphology.** Loga is agglutinative with invariant roots. An inflected word is exactly 3 bytes: $[\text{root}_1][\text{root}_2][\text{suffix}]$, where the suffix is a case marker for nouns (drawn from the `!`–`/` ASCII range) or a tense marker for verbs (drawn from the `:`–`@` range). No word carries both simultaneously — case and tense are on different word classes. The root never changes form. English's fusional irregularities — go/went, is/was/be, good/better/best — are structurally impossible. The sentence-final period `.` is always a standalone character following a complete verb word; the adverbial case suffix `.` is always the third byte of a noun word — these are unambiguous by position since verbs cannot take case suffixes and nouns cannot take tense markers.
+**Morphology.** Loga is agglutinative with invariant roots. An inflected word is exactly 3 bytes: $[\text{root}_1][\text{root}_2][\text{suffix}]$, where the suffix is a case marker for nouns (drawn from the `!`–`/` ASCII range) or a tense marker for verbs (drawn from the `:`–`@` range). No word carries both simultaneously — case and tense are on different word classes. The root never changes form. English's fusional irregularities — go/went, is/was/be, good/better/best — are structurally impossible. The sentence-final period `.` is always a standalone space-delimited token following a complete verb word; the adverbial suffix `.` is always the third byte of a word (noun or verb-root adverb) — these are unambiguous by position: `.` preceded by a tense-marker character is sentence-final, while `.` as the third byte of a root + adverbial pattern is adverbial.
 
 **Syntax.** Word order is strict SOV with no movement rules. The grammar is context-free. No topicalization, no wh-movement, no garden-path constructions.
 
@@ -116,7 +116,7 @@ Total: 10 bytes, ~4 tokens. English "The person sees the thing." is ~28 bytes an
 
 ---
 
-## 7. Two Conjectures and a Factorial Experiment
+## 7. Three Conjectures and a Factorial Experiment
 
 ### 7.1 Conjecture 1: Training Language Affects Pre-Training Efficiency
 
@@ -216,7 +216,7 @@ We offer this paper as a statement of the conjectures and a map of the territory
 
 ## Acknowledgements
 
-The authors thank the developers of autoresearch-mlx, the MLX framework (Apple), and the Simple English Wikipedia community. Translation infrastructure uses the Anthropic Claude API.
+The author thanks the developers of autoresearch-mlx, the MLX framework (Apple), and the Simple English Wikipedia community. Translation infrastructure uses the Anthropic Claude API.
 
 ---
 
@@ -224,7 +224,7 @@ The authors thank the developers of autoresearch-mlx, the MLX framework (Apple),
 
 [1] Sennrich, R., Haddow, B. & Birch, A. (2016). Neural machine translation of rare words with subword units. *ACL 2016*. https://aclanthology.org/P16-1162/
 
-[2] [Authors TBD — verify at arxiv.org/abs/2502.00894]. MorphBPE: A Morpho-Aware Tokenizer Bridging Linguistic Complexity for Efficient LLM Training Across Morphologies. (2025). arXiv:2502.00894.
+[2] Asgari, E., El Kheir, Y. & Sadraei Javaheri, M.A. (2025). MorphBPE: A Morpho-Aware Tokenizer Bridging Linguistic Complexity for Efficient LLM Training Across Morphologies. arXiv:2502.00894.
 
 [3] Jabbar, H. et al. (2023). MorphPiece: A Linguistic Tokenizer for Large Language Models. arXiv:2307.07262.
 
@@ -234,7 +234,7 @@ The authors thank the developers of autoresearch-mlx, the MLX framework (Apple),
 
 [6] Galke, L., Ram, Y. & Raviv, L. (2024). What Makes a Language Easy to Deep-Learn? Deep Neural Networks and Humans Similarly Benefit from Compositional Structure. *Nature Communications*. arXiv:2302.12239.
 
-[7] [Authors TBD — verify at arxiv.org/abs/2507.06378]. Evaluating Morphological Alignment of Tokenizers in 70 Languages. (2025). arXiv:2507.06378.
+[7] Arnett, C., Hudspeth, M. & O'Connor, B. (2025). Evaluating Morphological Alignment of Tokenizers in 70 Languages. Tokenization Workshop, ICML 2025. arXiv:2507.06378.
 
 [8] Erdogan, M. et al. (2026). An Information-Theoretic Perspective on LLM Tokenizers. arXiv:2601.09039.
 
@@ -250,7 +250,7 @@ The authors thank the developers of autoresearch-mlx, the MLX framework (Apple),
 
 [14] Yu, L. et al. (2023). MEGABYTE: Predicting Million-byte Sequences with Multiscale Transformers. *NeurIPS 2023*. arXiv:2305.07185.
 
-[15] [Authors TBD — verify at arxiv.org/abs/2502.04488]. Building A Unified AI-centric Language System: Analysis, Framework and Future Work. (2025). arXiv:2502.04488.
+[15] Wang, E.H. & Wen, C.X. (2025). Building A Unified AI-centric Language System: Analysis, Framework and Future Work. arXiv:2502.04488.
 
 [16] Ma, S., Wang, H. et al. (2024). The Era of 1-bit LLMs: All Large Language Models are in 1.58 Bits. arXiv:2402.17764.
 

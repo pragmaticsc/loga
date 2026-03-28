@@ -13,11 +13,11 @@
 |---|---|
 | Full printable ASCII alphabet (95 chars) | Maximum information density per byte within the 1-byte UTF-8 range: 6.57 bits/byte vs. 4.70 for lowercase-only |
 | Semantic role encoded in character class | First byte of every token carries its syntactic function; transformers can determine role with zero context |
-| 2-character roots | 95² = 9,025 possible roots in 2 bytes; 3.6× more expressive than prior CVCV design at half the byte cost |
+| 2-character roots | 26×62 = 1,612 noun roots + 1,612 verb roots (3,224 usable) in 2 bytes; >1.3× more expressive than prior CVCV design at half the byte cost |
 | 1-character suffixes | Case (nouns) or tense/aspect (verbs) each cost exactly 1 byte; full inflected word = 3 bytes total |
 | Strict SOV word order | Eliminates attachment ambiguity; parser never needs lookahead |
 | Agglutinative morphology | Root + case (nouns) or Root + tense (verbs); each suffix is compositionally appended, never fused |
-| No homographs | Every byte sequence maps to exactly one meaning |
+| No homographs | Every assigned root maps to exactly one meaning; proper nouns share the uppercase namespace with verbs but are unambiguously distinguished by their suffix type |
 | Context-free parseable | Sentence structure derivable from a finite EBNF grammar with no heuristics |
 
 ---
@@ -45,7 +45,7 @@ CJK characters — despite encoding thousands of concepts visually — are *less
 
 | Metric | v0.1 (CVCV) | v0.2 (95-char ASCII) | Improvement |
 |--------|-------------|----------------------|-------------|
-| Root vocabulary | 2,500 | 9,025 | 3.6× |
+| Root vocabulary | 2,500 | 3,224 (1,612 noun + 1,612 verb) | >1.3× |
 | Bytes per root | 4 | 2 | 50% fewer |
 | Bytes per inflected word | 4–6 | 3 | consistent |
 | Bits/byte in root position | 4.32 | 6.57 | +52% |
@@ -219,17 +219,18 @@ We use a constrained subset of ~300 noun roots and ~200 verb roots for core voca
 
 ### 5.3 Compounds
 
-Two roots joined with `{`:
-- `ku{Ma` = water-make = irrigate
-- `ge{se` = fire-place = volcano
-- `pa{ka` = idea-person = philosopher
+Two roots joined with `{`. The grammatical class of the compound is determined by its **first character**: lowercase first char = noun compound; uppercase first char = verb compound. The compound takes a case suffix (noun) or tense marker (verb) accordingly:
+- `ku{Ma!` = water-make, nominative (irrigator) — noun compound, `ku` has lowercase first char
+- `ge{se%` = fire-place, locative (at the volcano) — noun compound
+- `pa{ka!` = idea-person, nominative (philosopher) — noun compound
+- `Ku{ma:` = Water-move, present (irrigate) — verb compound using uppercase-first verb root
 
 ### 5.4 Proper Nouns
 
-Transliterated into Loga phonotactics using available root characters, capitalized on first character. Proper nouns take nominal case suffixes like any other noun:
-- "England" → `En`
-- "Paris" → `Pa` (disambiguated by context; if collision risk, use `Pa2`)
-- "Albert Einstein" → `Ab Es`
+Transliterated into Loga phonotactics using available root characters, capitalized on first character. Proper nouns must always be fully inflected with a case suffix — the bare root is not a valid word form:
+- "England" → `En!` (nominative)
+- "Paris" → `Pa!` (nominative) — `Pa` shares the uppercase namespace with potential verb roots, but the case suffix `!` (from the `!`–`/` range) unambiguously marks it as a proper noun, not a verb
+- "Albert Einstein" → `Ab! Es!` (two proper noun tokens)
 
 ---
 
@@ -280,17 +281,17 @@ mi! ` ka! da" Se; " Kn:
 
 ### 6.6 Questions
 
-Replace the tense marker with `?` on the main verb:
+**Yes/no questions**: replace the tense marker with `?` on the main verb. Note that explicit tense is lost and must be inferred from context — this is a deliberate design tradeoff favouring simplicity.
 
 ```
-mi! da" Se?     = Do I see the thing? / Did I see the thing?
+mi! da" Se?     = Do I see / Did I see / Will I see the thing?
 ```
 
-Wh-questions use the interrogative pronoun `wi` (what/who/which) with the appropriate case suffix:
+**Wh-questions**: use the interrogative pronoun `wi` (what/who/which) with the appropriate case suffix. The verb retains its normal tense marker — tense is not lost.
 
 ```
-wi! da" Se:     = Who sees the thing?
-mi! wi% Go:     = Where am I going?
+wi! da" Se:     = Who sees the thing?       (wi = nominative, verb present)
+mi! wi% Go:     = Where am I going?         (wi = locative, verb present)
 ```
 
 ### 6.7 Negation
@@ -307,36 +308,45 @@ _mi! da" Se:    = Not I (but someone else) sees the thing.
 ## 7. EBNF Grammar
 
 ```ebnf
-sentence      ::= declarative | question
-declarative   ::= noun_phrase+ verb_phrase "."
-question      ::= noun_phrase+ verb_phrase
+sentence         ::= declarative | question
+declarative      ::= noun_arg+ decl_verb_phrase SPACE "."
+question         ::= noun_arg+ quest_verb_phrase
 
-noun_phrase   ::= (quantifier SPACE)? (noun | proper_noun) (SPACE adjective)* (SPACE rel_clause)?
-noun          ::= noun_root case_suffix
-noun_root     ::= [a-z] [a-zA-Z0-9]
-proper_noun   ::= proper_noun_root case_suffix
+noun_arg         ::= (quantifier SPACE)? (noun | proper_noun | clause_arg)
+                     (SPACE adjective)* (SPACE SPACE)?
+noun             ::= noun_root case_suffix
+noun_root        ::= [a-z] [a-zA-Z0-9]
+proper_noun      ::= proper_noun_root case_suffix
 proper_noun_root ::= [A-Z] [a-zA-Z0-9]
-case_suffix   ::= "!" | '"' | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/"
+case_suffix      ::= "!" | '"' | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/"
 
-adjective     ::= (noun_root | verb_root) "-"
-adverb        ::= (noun_root | verb_root) "."
+clause_arg       ::= "`" noun_arg+ decl_verb_phrase SPACE case_suffix
+                   (* subordinate clause used as a syntactic argument;
+                      case_suffix is standalone, marking the clause's role *)
 
-verb_phrase   ::= ("_")? verb tense_marker
-verb          ::= verb_root
-verb_root     ::= [A-Z] [a-zA-Z0-9]
-tense_marker  ::= ":" | ";" | "<" | "=" | ">" | "?" | "@"
+adjective        ::= (noun_root | verb_root) "-"
+adverb           ::= (noun_root | verb_root) "."
 
-rel_clause    ::= "`" declarative "`"
+decl_verb_phrase  ::= ("_" SPACE)? verb decl_tense
+quest_verb_phrase ::= ("_" SPACE)? verb "?"
+verb              ::= verb_root
+verb_root         ::= [A-Z] [a-zA-Z0-9]
+decl_tense        ::= ":" | ";" | "<" | "=" | ">" | "@"
+tense_marker      ::= decl_tense | "?"
 
-quantifier    ::= "[" | "\" | "]" | "^"
+quantifier       ::= "[" | "\" | "]" | "^"
 
-compound      ::= root "{" root
-root          ::= noun_root | verb_root
+compound         ::= root "{" root
+root             ::= noun_root | verb_root
 
-SPACE         ::= " "
+SPACE            ::= " "
 ```
 
-Note: `proper_noun_root` and `verb_root` share the same pattern `[A-Z][a-zA-Z0-9]`; they are distinguished by their suffix — case suffixes (`!`–`/`) mark proper nouns, tense markers (`:`–`@`) mark verbs.
+Notes:
+- `proper_noun_root` and `verb_root` share the pattern `[A-Z][a-zA-Z0-9]`; suffix type distinguishes them — case suffixes (`!`–`/`) mark proper nouns, tense markers (`:`–`@`) mark verbs.
+- `clause_arg` is the one structural exception to the 3-byte word rule: the case suffix following a subordinate clause is a standalone token marking the clause's syntactic role.
+- Yes/no questions use `?` as the verb's tense marker (losing explicit tense, which must be inferred from context); wh-questions use the interrogative pronoun `wi` with a normal tense marker.
+- Negation particle `_` is space-delimited before its target word.
 
 This grammar is **context-free**. Every syntactic role is recoverable from local character-class information without lookahead or world knowledge.
 
@@ -428,7 +438,7 @@ English achieves roughly 40–55% (Shannon, 1951; estimated from natural languag
 
 - **Encoding**: UTF-8 (all characters are single-byte ASCII)
 - **Word delimiter**: space (U+0020)
-- **Sentence delimiter**: `.` (declarative) or `?` (interrogative) followed by space
+- **Sentence delimiter**: standalone `.` token after the verb (declarative sentences only). Interrogative sentences have no sentence-final delimiter — they are identified by the `?` tense marker on the final verb.
 - **Paragraph delimiter**: `\n\n` (blank line)
 - **File extension**: `.loga`
 - **Tokenizer vocab size**: 8,192 (matches autoresearch-mlx default)

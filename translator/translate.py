@@ -115,7 +115,7 @@ Core nouns (all lowercase first char):
   la=land/ground   ha=leader   re=rule/law go=road     no=knowledge
   fa=group/family  wa=conflict pe=food     de=death    gi=start
   ta=end           nu=number   su=part     yu=purpose  ro=work
-  lo=location      ve=event    fi=feeling  wi=will     bi=size/big
+  lo=location      ve=event    fi=feeling  wi=what/who/which(interrogative)  bi=size/big
   mo=amount/many   zo=zero     ra=animal   pi=plant    co=country
 
 Core verbs (all uppercase first char):
