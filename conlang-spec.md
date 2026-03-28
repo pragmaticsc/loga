@@ -14,9 +14,9 @@
 | Full printable ASCII alphabet (95 chars) | Maximum information density per byte within the 1-byte UTF-8 range: 6.57 bits/byte vs. 4.70 for lowercase-only |
 | Semantic role encoded in character class | First byte of every token carries its syntactic function; transformers can determine role with zero context |
 | 2-character roots | 95² = 9,025 possible roots in 2 bytes; 3.6× more expressive than prior CVCV design at half the byte cost |
-| 1-character suffixes | Case, tense, and aspect each cost exactly 1 byte; full inflected word = 4 bytes total |
+| 1-character suffixes | Case (nouns) or tense/aspect (verbs) each cost exactly 1 byte; full inflected word = 3 bytes total |
 | Strict SOV word order | Eliminates attachment ambiguity; parser never needs lookahead |
-| Agglutinative morphology | Root + case + tense; each layer is compositionally appended, never fused |
+| Agglutinative morphology | Root + case (nouns) or Root + tense (verbs); each suffix is compositionally appended, never fused |
 | No homographs | Every byte sequence maps to exactly one meaning |
 | Context-free parseable | Sentence structure derivable from a finite EBNF grammar with no heuristics |
 
@@ -47,14 +47,14 @@ CJK characters — despite encoding thousands of concepts visually — are *less
 |--------|-------------|----------------------|-------------|
 | Root vocabulary | 2,500 | 9,025 | 3.6× |
 | Bytes per root | 4 | 2 | 50% fewer |
-| Bytes per inflected word | 4–6 | 4 | consistent |
+| Bytes per inflected word | 4–6 | 3 | consistent |
 | Bits/byte in root position | 4.32 | 6.57 | +52% |
 
 ---
 
 ## 3. Character Set and Semantic Partitioning
 
-All 95 printable ASCII characters (U+0021 `!` through U+007E `~`) are used. The space character (U+0020) serves as the word boundary.
+All 95 printable ASCII characters (U+0020 through U+007E) are used. The space character (U+0020) serves as the word boundary; the remaining 94 visible characters (`!` through `~`, U+0021–U+007E) serve as root characters and grammatical suffixes.
 
 **Critical design feature**: character class encodes grammatical role. A transformer's attention head can determine the syntactic function of any character from its byte value alone — no context required.
 
@@ -194,6 +194,7 @@ We use a constrained subset of ~300 noun roots and ~200 verb roots for core voca
 | `pa` | idea, concept |
 | `da` | thing, object |
 | `ne` | name, word |
+| `wi` | what, who, which (interrogative pronoun) |
 
 **Core verbs** (uppercase first char):
 
@@ -285,11 +286,11 @@ Replace the tense marker with `?` on the main verb:
 mi! da" Se?     = Do I see the thing? / Did I see the thing?
 ```
 
-Wh-questions use `??` as a placeholder noun (what/who/where):
+Wh-questions use the interrogative pronoun `wi` (what/who/which) with the appropriate case suffix:
 
 ```
-??! da" Se:     = Who sees the thing?
-mi! ??% Go:     = Where am I going?
+wi! da" Se:     = Who sees the thing?
+mi! wi% Go:     = Where am I going?
 ```
 
 ### 6.7 Negation
@@ -308,11 +309,13 @@ _mi! da" Se:    = Not I (but someone else) sees the thing.
 ```ebnf
 sentence      ::= declarative | question
 declarative   ::= noun_phrase+ verb_phrase "."
-question      ::= noun_phrase+ verb_phrase "?"
+question      ::= noun_phrase+ verb_phrase
 
-noun_phrase   ::= (quantifier SPACE)? noun (SPACE adjective)* (SPACE rel_clause)?
+noun_phrase   ::= (quantifier SPACE)? (noun | proper_noun) (SPACE adjective)* (SPACE rel_clause)?
 noun          ::= noun_root case_suffix
 noun_root     ::= [a-z] [a-zA-Z0-9]
+proper_noun   ::= proper_noun_root case_suffix
+proper_noun_root ::= [A-Z] [a-zA-Z0-9]
 case_suffix   ::= "!" | '"' | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/"
 
 adjective     ::= (noun_root | verb_root) "-"
@@ -333,6 +336,8 @@ root          ::= noun_root | verb_root
 SPACE         ::= " "
 ```
 
+Note: `proper_noun_root` and `verb_root` share the same pattern `[A-Z][a-zA-Z0-9]`; they are distinguished by their suffix — case suffixes (`!`–`/`) mark proper nouns, tense markers (`:`–`@`) mark verbs.
+
 This grammar is **context-free**. Every syntactic role is recoverable from local character-class information without lookahead or world knowledge.
 
 ---
@@ -342,37 +347,36 @@ This grammar is **context-free**. Every syntactic role is recoverable from local
 ### 8.1 "The person sat in the city."
 
 ```
-ka!  bo%  Si;.
-ka!  bo%  Si;
-person-SUBJ  city-LOC  sit-PAST
+ka!  bo%  Si; .
+person-SUBJ  city-LOC  sit-PAST  .
 ```
 
 ### 8.2 "Water is life."
 
 ```
-ku!  li"  Be:.
-water-SUBJ  life-OBJ  be-PRES
+ku!  li"  Be: .
+water-SUBJ  life-OBJ  be-PRES  .
 ```
 
-### 8.3 "I know that the cat sat on the mat."
+### 8.3 "I know that the person sat in the city."
 
 ```
-mi!  ` ka!  ma%  Si; "  Kn:.
-I-SUBJ  COMP  cat-SUBJ  mat-LOC  sit-PAST  OBJ  know-PRES
+mi!  ` ka!  bo%  Si; "  Kn: .
+I-SUBJ  COMP  person-SUBJ  city-LOC  sit-PAST  OBJ  know-PRES  .
 ```
 
 ### 8.4 "The philosopher will not see the beautiful world."
 
 ```
-pa{ka!  se"  bi-  _Se<.
-philosopher-SUBJ  world-OBJ  beautiful-ADJ  NEG-see-FUT
+pa{ka!  se"  bi-  _Se< .
+philosopher-SUBJ  world-OBJ  beautiful-ADJ  NEG-see-FUT  .
 ```
 
 ### 8.5 "Some people will go toward the city."
 
 ```
-\ ka!  bo&  Go<.
-some  person-SUBJ  city-LAT  go-FUT
+\ ka!  bo&  Go< .
+some  person-SUBJ  city-LAT  go-FUT  .
 ```
 
 ---

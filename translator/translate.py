@@ -125,7 +125,7 @@ Core verbs (all uppercase first char):
   Li=live        Di=die      Ca=call     Co=come        Le=leave
   Fi=find        St=start    En=end      Ch=change      Ru=rule
   Fo=follow      Wo=work     Fe=feel     Wi=want        Re=return
-  Bu=build       Br=bring    Se=see      Sp=speak       Tr=travel
+  Bu=build       Br=bring    Sp=speak    Tr=travel
 
 Numbers: use digit literals directly. Compound: 42, 100, 1945.
 
@@ -134,12 +134,12 @@ Proper nouns: abbreviate to 2 printable ASCII chars, capitalize first.
   "United States" → US!   "World War" → Ww!
 
 SAMPLE SENTENCES:
-  ka! da" Se:.     = The person sees the thing.
-  mi! bo& Go;.     = I went toward the city.
-  ku! li" Be:.     = Water is life.
-  mi! ` ka! da" Se; " Kn:.  = I know that the person saw the thing.
-  \ ka! bo& Go<.   = Some people will go to the city.
-  mi! da" _Se:.    = I do not see the thing.
+  ka! da" Se: .     = The person sees the thing.
+  mi! bo& Go; .     = I went toward the city.
+  ku! li" Be: .     = Water is life.
+  mi! ` ka! da" Se; " Kn: .  = I know that the person saw the thing.
+  \ ka! bo& Go< .   = Some people will go to the city.
+  mi! da" _Se: .    = I do not see the thing.
 
 TRANSLATION RULES:
 1. Translate MEANING, not word-for-word. Choose the closest Loga root.
@@ -148,7 +148,7 @@ TRANSLATION RULES:
 4. Preserve paragraph structure (blank lines between paragraphs).
 5. Output ONLY Loga text. NO English. NO explanation. NO commentary.
 6. Every noun must have exactly one case suffix. Every verb must have exactly one tense marker.
-7. Sentence-final period "." ends each sentence and is followed by a space.
+7. Sentence-final period "." is a standalone space-delimited token after the verb: e.g. "Go; ." not "Go;."
 """
 
 BACK_TRANSLATE_PREAMBLE = """\

@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "loga"
@@ -45,6 +45,10 @@ dev = [
 translate = "translator.translate:cli"
 train-tokenizer = "tokenizer.tokenizer_train:cli"
 benchmark = "eval.benchmark:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["translator*", "tokenizer*", "eval*", "train*"]
 
 [tool.ruff]
 line-length = 100
