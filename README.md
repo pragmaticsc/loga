@@ -63,7 +63,7 @@ All four cells: identical nanochat-scale architecture (10–50M params), identic
 Loga is designed around one measurable goal: maximise the conditional predictability of the token stream. Key properties:
 
 - **95 printable ASCII characters** — 6.57 bits/byte, the information-theoretic optimum within UTF-8's 1-byte range
-- **2-character roots** — 9,025 possible roots in 2 bytes (vs. 2,500 in 4 bytes for a typical CVCV design)
+- **2-character roots** — 3,224 usable roots in 2 bytes (1,612 noun + 1,612 verb, from `[a-z][a-zA-Z0-9]` and `[A-Z][a-zA-Z0-9]`)
 - **Character class encodes syntactic role** — lowercase = noun root, uppercase = verb root, `!`–`/` = case suffixes, `:`–`@` = tense markers. Syntactic function is readable from the first byte.
 - **Agglutinative, invariant roots** — no irregular alternations (go/went, is/was/be)
 - **Strict SOV, context-free grammar** — EBNF fits on one page, no heuristics
@@ -97,7 +97,8 @@ loga/
 │   └── sparsity.py          # Head-level zero variance (Conjecture 3)
 │
 └── docs/
-    └── perspective-arxiv.md # Preprint (also on arXiv)
+    ├── perspective-arxiv.md # Preprint (also on arXiv)
+    └── explainer.md         # Plain-English guide (high-school level)
 ```
 
 ---
@@ -211,6 +212,6 @@ The conjectures are grounded in these key papers:
 ## Contributing
 
 Experiments not yet run. If you have GPU/Apple Silicon compute and want to
-run one of the four cells, open an issue and we can coordinate to avoid
+run one of the four cells, open an issue and I can coordinate to avoid
 duplication. The most valuable contribution right now is running **cell A**
 (English float16 baseline) to establish the val_bpb floor.
