@@ -57,7 +57,7 @@ A concrete illustration: Shannon entropy per byte — $H(X) / \text{bytes}(X)$ �
 | Latin Extended (ü, é, …) | 256 | 2 | 4.00 |
 | CJK ideographs | ~20,000 | 3 | 4.76 |
 
-The counterintuitive result: CJK characters — despite encoding thousands of concepts visually — are *less* byte-efficient than two-character ASCII roots because the 3-byte UTF-8 encoding cost cancels the representational gain. The information-theoretic optimum within the 1-byte encoding range is the full 95-character printable ASCII set, achieving 6.57 bits per byte — a 40% improvement over lowercase-only alphabets at no encoding cost. This informs the root size in Loga: a 2-character root drawn from this partitioned alphabet yields $26 \times 62 = 1{,}612$ noun roots and $1{,}612$ verb roots ($3{,}224$ usable in total) in 2 bytes — more than previous phonotactically restricted systems at half the byte cost per root — ensuring roots are frequent enough for reliable BPE merging.
+The counterintuitive result: CJK characters — despite encoding thousands of concepts visually — are *less* byte-efficient than two-character ASCII roots because the 3-byte UTF-8 encoding cost cancels the representational gain. The information-theoretic optimum within the 1-byte encoding range is the full 95-character printable ASCII set, achieving 6.57 bits per byte — a 40% improvement over lowercase-only alphabets at no encoding cost. This informs the root size in Loga: a 2-character root drawn from this partitioned alphabet yields $26 \times 62 = 1{,}612$ noun roots and $1{,}612$ verb roots ($3{,}224$ usable in total) in 2 bytes, ensuring roots are frequent enough for reliable BPE merging.
 
 The character partitioning plays two complementary roles. First, it is an engineering convenience: assigning all noun roots to one ASCII range and all verb roots to another gives the BPE tokenizer strong statistical signal to keep morpheme boundaries intact during merging. Second, the 95-character set maximises information density per byte within the UTF-8 single-byte constraint. These are, however, secondary contributions. The primary efficiency gains we conjecture derive from compositional regularity and conditional entropy reduction — properties of the morphological structure, not of the specific glyphs. A Loga rewritten in a different character set but preserving the same SOV grammar, agglutinative morphology, and invariant roots would likely yield similar training efficiency results. The character set aids implementation and BPE alignment; it is not itself the hypothesis.
 
@@ -113,7 +113,7 @@ We describe a candidate constructed language, Loga, designed around the measurab
 | `.` | sentence boundary | 1 | 1 |
 | ` ` × 3 | word delimiters | 3 | (merged with adjacent tokens) |
 
-Total: 13 bytes, ~4 tokens. English "The person sees the thing." is 26 bytes and tokenises to 7–8 BPE tokens (GPT-4 tokenizer). At BPE vocab=8,192 trained on Loga text, every inflected 3-byte word form appears thousands of times and merges to a single token, approaching the ideal of one token per semantic+grammatical unit.
+Total: 13 bytes, ~4 tokens. English "The person sees the thing." is 26 bytes and tokenises to ~6 BPE tokens (GPT-4 tokenizer). At BPE vocab=8,192 trained on Loga text, every inflected 3-byte word form appears thousands of times and merges to a single token, approaching the ideal of one token per semantic+grammatical unit.
 
 ---
 
