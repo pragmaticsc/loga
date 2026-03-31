@@ -182,6 +182,7 @@ We use a constrained subset of ~300 noun roots and ~200 verb roots for core voca
 | `pa` | idea, concept |
 | `da` | thing, object |
 | `ne` | name, word |
+| `bi` | big, large |
 | `wi` | what, who, which (interrogative pronoun) |
 
 **Core verbs** (uppercase first char):
