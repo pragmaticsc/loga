@@ -1,9 +1,6 @@
 # Loga: LLM-Optimized Constructed Language — Formal Specification
 
-**Version**: 0.2
 **Design goal**: A constructed language whose surface form maximally aligns with Byte-Pair Encoding (BPE) tokenization, eliminates syntactic ambiguity, and expresses meaning compositionally so that small language models can achieve better bits-per-byte than equivalent English-trained models.
-
-**v0.2 changes**: Replaced the 20-character CVCV alphabet with a 95-character full printable ASCII alphabet. Information-theoretic analysis shows this is the density optimum within the 1-byte-per-character constraint imposed by UTF-8 encoding.
 
 ---
 
@@ -13,7 +10,7 @@
 |---|---|
 | Full printable ASCII alphabet (95 chars) | Maximum information density per byte within the 1-byte UTF-8 range: 6.57 bits/byte vs. 4.70 for lowercase-only |
 | Semantic role encoded in character class | First byte of every token carries its syntactic function; transformers can determine role with zero context |
-| 2-character roots | 26×62 = 1,612 noun roots + 1,612 verb roots (3,224 usable) in 2 bytes; >1.3× more expressive than prior CVCV design at half the byte cost |
+| 2-character roots | 26×62 = 1,612 noun roots + 1,612 verb roots (3,224 usable) in 2 bytes; encodes 3,224 distinct concepts at 2 bytes per root |
 | 1-character suffixes | Case (nouns) or tense/aspect (verbs) each cost exactly 1 byte; full inflected word = 3 bytes total |
 | Strict SOV word order | Eliminates attachment ambiguity; parser never needs lookahead |
 | Agglutinative morphology | Root + case (nouns) or Root + tense (verbs); each suffix is compositionally appended, never fused |
@@ -31,7 +28,7 @@ UTF-8 encodes codepoints above U+007F as 2 or more bytes, regardless of how visu
 ```
 Alphabet               Chars   Bytes/char   Bits/byte   2-char roots
 ---------------------  ------  -----------  ----------  ------------
-CVCV alphabet (v0.1)       20          1.0        4.32           400
+Lowercase ASCII only       26          1.0        4.70           676
 Lowercase + upper ASCII    52          1.0        5.70         2,704
 Full printable ASCII       95          1.0        6.57         9,025  ← optimum (theoretical; Loga uses 3,224 under semantic partitioning)
 Latin Extended (ü, é…)    256          2.0        4.00            —
@@ -40,15 +37,6 @@ CJK ideographs          20000          3.0        4.76            —
 ```
 
 CJK characters — despite encoding thousands of concepts visually — are *less* byte-efficient than 2-character ASCII roots because the 3-byte UTF-8 encoding cost cancels the representational gain. The 95-character printable ASCII set is the information-theoretic optimum given the UTF-8 encoding layer.
-
-### 2.2 Practical Gains Over v0.1
-
-| Metric | v0.1 (CVCV) | v0.2 (95-char ASCII) | Improvement |
-|--------|-------------|----------------------|-------------|
-| Root vocabulary | 2,500 | 3,224 (1,612 noun + 1,612 verb) | >1.3× |
-| Bytes per root | 4 | 2 | 50% fewer |
-| Bytes per inflected word | 4–6 | 3 | consistent |
-| Bits/byte in root position | 4.32 | 6.57 | +52% |
 
 ---
 
@@ -227,7 +215,7 @@ Two roots joined with `{`. The grammatical class of the compound is determined b
 
 ### 5.4 Proper Nouns
 
-Transliterated into Loga phonotactics using available root characters, capitalized on first character. Proper nouns must always be fully inflected with a case suffix — the bare root is not a valid word form:
+Transliterated into Loga root characters, capitalized on first character. Proper nouns must always be fully inflected with a case suffix — the bare root is not a valid word form:
 - "England" → `En!` (nominative)
 - "Paris" → `Pa!` (nominative) — `Pa` shares the uppercase namespace with potential verb roots, but the case suffix `!` (from the `!`–`/` range) unambiguously marks it as a proper noun, not a verb
 - "Albert Einstein" → `Ab! Es!` (two proper noun tokens)
@@ -360,7 +348,7 @@ This grammar is **context-free**. Every syntactic role is recoverable from local
 
 ---
 
-## 8. Sample Sentences (v0.2)
+## 8. Sample Sentences
 
 ### 8.1 "The person sat in the city."
 
@@ -399,7 +387,7 @@ some  person-SUBJ  city-LAT  go-FUT  .
 
 ---
 
-## 9. BPE Tokenization Analysis (v0.2)
+## 9. BPE Tokenization Analysis
 
 ### 9.1 Expected Token Structure
 
