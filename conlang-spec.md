@@ -9,8 +9,8 @@
 | Principle | Rationale |
 |---|---|
 | Full printable ASCII alphabet (95 chars) | Maximum information density per byte within the 1-byte UTF-8 range: 6.57 bits/byte vs. 4.70 for lowercase-only |
-| Semantic role encoded in character class | First byte of every token carries its syntactic function; transformers can determine role with zero context |
-| 2-character roots | 26×62 = 1,612 noun roots + 1,612 verb roots (3,224 usable) in 2 bytes; encodes 3,224 distinct concepts at 2 bytes per root |
+| Semantic role encoded in character class | First byte of most tokens carries its syntactic function; uppercase-first tokens (verbs and proper nouns) are distinguished by the third byte — always local, never requiring sentence-level context |
+| 2-character roots | 26×62 = 1,612 noun roots + 1,612 verb roots (3,224 usable) in 2 bytes |
 | 1-character suffixes | Case (nouns) or tense/aspect (verbs) each cost exactly 1 byte; full inflected word = 3 bytes total |
 | Strict SOV word order | Eliminates attachment ambiguity; parser never needs lookahead |
 | Agglutinative morphology | Root + case (nouns) or Root + tense (verbs); each suffix is compositionally appended, never fused |
@@ -36,7 +36,7 @@ Latin Extended (ü, é…)    256          2.0        4.00            —
 CJK ideographs          20000          3.0        4.76            —
 ```
 
-CJK characters — despite encoding thousands of concepts visually — are *less* byte-efficient than 2-character ASCII roots because the 3-byte UTF-8 encoding cost cancels the representational gain. The 95-character printable ASCII set is the information-theoretic optimum given the UTF-8 encoding layer.
+The 95-character printable ASCII set is the information-theoretic optimum given the UTF-8 encoding layer.
 
 ---
 
@@ -44,7 +44,7 @@ CJK characters — despite encoding thousands of concepts visually — are *less
 
 All 95 printable ASCII characters (U+0020 through U+007E) are used. The space character (U+0020) serves as the word boundary; the remaining 94 visible characters (`!` through `~`, U+0021–U+007E) serve as root characters and grammatical suffixes.
 
-**Critical design feature**: character class encodes grammatical role. A transformer's attention head can determine the syntactic function of any character from its byte value alone — no context required.
+**Critical design feature**: character class encodes grammatical role. A transformer's attention head can determine the syntactic function of any token within 3 bytes — no sentence-level context required. For lowercase-first tokens the first byte alone suffices; for uppercase-first tokens, verbs and proper nouns are distinguished by the third byte (tense marker vs. case suffix).
 
 ### 3.1 ASCII Range Assignments
 
@@ -212,7 +212,7 @@ Two roots joined with `{`. The grammatical class of the compound is determined b
 - `ku{Ma!` = water-make, nominative (irrigator) — noun compound, `ku` has lowercase first char
 - `ge{se%` = fire-place, locative (at the volcano) — noun compound
 - `pa{ka!` = idea-person, nominative (philosopher) — noun compound
-- `Ku{ma:` = Water-move, present (irrigate) — verb compound using uppercase-first verb root
+- `Ma{ku:` = Make-water, present (irrigate) — verb compound, uppercase `M` makes it a verb compound
 
 ### 5.4 Proper Nouns
 
@@ -406,8 +406,6 @@ With BPE vocab=8192 trained on Loga text:
 With ~300 noun roots × 15 cases = 4,500 inflected noun forms, each appearing thousands of times in the training corpus, BPE at vocab=8192 will learn nearly all of them as single tokens. The token stream then approaches the ideal of **one token per semantic+grammatical unit**.
 
 A Loga inflected word is 3 bytes/token by construction.
-
-Predicted efficiency gain: a measurable reduction in tokens for equivalent semantic content, compared to English BPE at the same vocabulary size. The specific magnitude is an empirical question.
 
 ### 9.3 Theoretical Ceiling
 
