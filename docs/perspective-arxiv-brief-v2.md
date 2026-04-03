@@ -97,15 +97,17 @@ Bits-per-byte measures how efficiently a model compresses held-out text. Lower v
 2. **Conditional entropy reduction**: Loga's strict SOV syntax and agglutinative morphology reduce next-token entropy given context — the model has stronger priors about what class of token must follow.
 3. **No irregular alternation**: the model need not allocate parameters to learning that go/went are the same verb, or that bank is ambiguous.
 
-**Experiment.** Two cells, identical in all respects except training language:
+**Experiment.** Three cells, identical in all respects except training language:
 
-| | English corpus | Loga corpus |
-|--|---|---|
-| **float16 weights** | A: reference | B: tests conjecture |
+| | English | Esperanto | Loga |
+|--|---|---|---|
+| **float16 weights** | A: reference | B: existing conlang | C: purpose-built |
 
-Both cells use the same model architecture (small-scale transformer, 10–50M parameters), the same compute budget (automated hyperparameter search via autoresearch-mlx [16] on Apple M4 Max), and BPE tokenizers of identical vocabulary size (8,192) trained on their respective corpora.
+This design tests a gradient rather than a binary comparison: A→B asks whether *any* more regular language outperforms English; B→C asks whether deliberate optimisation for machine learning adds further gain over an existing conlang; A→C is the original conjecture. A monotonically decreasing val\_bpb across A→B→C would constitute evidence for an optimisation function over the design space of training substrate languages.
 
-The training corpus for both conditions is Simple English Wikipedia (~160MB, ~250K articles). The Loga corpus is produced by LLM-assisted translation (claude-sonnet-4-6 with the full grammar specification as system context), with back-translation validation against a sentence embedding threshold to filter low-fidelity articles. Both cells train until a matched BPE token budget; results report both byte-normalized bpb (the primary metric) and token-normalized bpb, allowing tokenizer efficiency to be separated from model learning efficiency.
+All three cells use the same model architecture (small-scale transformer, 10–50M parameters), the same compute budget (automated hyperparameter search via autoresearch-mlx [16] on Apple M4 Max), and BPE tokenizers of identical vocabulary size (8,192) trained on their respective corpora.
+
+The base corpus is Simple English Wikipedia (~160MB, ~250K articles). The Loga corpus is produced by LLM-assisted translation with back-translation validation. The Esperanto corpus is produced by the same pipeline using a local neural translation model (Helsinki-NLP opus-mt-en-eo [17]), which is freely available and runs on consumer hardware; Esperanto is a well-studied translation pair and the X-system ASCII encoding (cx, gx, … for diacritics) keeps the corpus single-byte throughout. All three cells train until a matched BPE token budget; results report both byte-normalized bpb (the primary metric) and token-normalized bpb.
 
 ---
 
@@ -121,7 +123,7 @@ The language a model is trained on is not a fixed background condition. It is an
 
 A converging body of evidence — from compositional learning theory [6], tokenization information theory [7, 8], multilingual representation probing [9], and continuous reasoning research [13] — provides principled grounds for the conjecture. What remains is the experiment. The required tools are freely available, and the compute required is accessible on consumer hardware.
 
-We offer this paper as a precise statement of the conjecture and a proposal for the experiment needed to test it. To our knowledge, the controlled comparison has not been performed. We invite the community to run it.
+We offer this paper as a precise statement of the conjecture and a proposal for the experiment needed to test it. To our knowledge, the controlled comparison has not been performed. The three-cell design — English, Esperanto, Loga — is not merely a replication check; it tests whether training substrate efficiency follows an optimisation gradient from natural language through existing conlangs to purpose-built ones. We invite the community to run it.
 
 ---
 
@@ -164,3 +166,5 @@ The authors thank the developers of autoresearch-mlx, the MLX framework (Apple),
 [15] Building A Unified AI-centric Language System: Analysis, Framework and Future Work. (2025). arXiv:2502.04488.
 
 [16] autoresearch-mlx. trevin-creator. https://github.com/trevin-creator/autoresearch-mlx
+
+[17] Tiedemann, J. & Thottingal, S. (2020). OPUS-MT — Building open translation services for the World. *EAMT 2020*. https://aclanthology.org/2020.eamt-1.61/
