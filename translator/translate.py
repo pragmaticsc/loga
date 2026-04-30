@@ -207,12 +207,19 @@ async def translate_text(client: anthropic.AsyncAnthropic, text: str, model: str
         message = await client.messages.create(
             model=model,
             max_tokens=8192,
+            system=[
+                {
+                    "type": "text",
+                    "text": GRAMMAR_PREAMBLE,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
             messages=[
                 {
                     "role": "user",
-                    "content": f"{GRAMMAR_PREAMBLE}\n\nTranslate this English text to Loga:\n\n{chunk}"
+                    "content": f"Translate this English text to Loga:\n\n{chunk}",
                 }
-            ]
+            ],
         )
         translated_chunks.append(message.content[0].text.strip())
     return "\n\n".join(translated_chunks)
@@ -223,12 +230,19 @@ async def back_translate_text(client: anthropic.AsyncAnthropic, loga_text: str, 
     message = await client.messages.create(
         model=model,
         max_tokens=8192,
+        system=[
+            {
+                "type": "text",
+                "text": BACK_TRANSLATE_PREAMBLE,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
         messages=[
             {
                 "role": "user",
-                "content": f"{BACK_TRANSLATE_PREAMBLE}\n\n{loga_text}"
+                "content": loga_text,
             }
-        ]
+        ],
     )
     return message.content[0].text.strip()
 
